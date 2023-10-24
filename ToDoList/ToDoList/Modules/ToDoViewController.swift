@@ -8,8 +8,8 @@
 import UIKit
 
 class ToDoViewController: UIViewController {
-
-    private let plusButton: UIButton = {
+    
+    private let addTaskButton: UIButton = {
         let button = UIButton()
         button.setImage(UIImage(systemName: "plus"), for: .normal)
         button.setTitleColor(.black, for: .normal)
@@ -19,24 +19,36 @@ class ToDoViewController: UIViewController {
     
     private let toDoTableView: UITableView = {
         let tableView = UITableView()
-        tableView.style = .grouped
-
-        tableView.backgroundColor = .systemYellow
+        tableView.backgroundColor = .clear
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
+        
+    private var tasksArray: [ToDoViewModel] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        view.backgroundColor = .systemGray4
+        view.backgroundColor = .systemGray5
         view.addSubview(toDoTableView)
-        setupConstraints()
+        
+        toDoTableView.delegate = self
+        toDoTableView.dataSource = self
+        toDoTableView.register(ToDoTableViewCell.self,
+                               forCellReuseIdentifier: ToDoTableViewCell.identifier)
         
         navigationItem.title = "ToDo list"
         navigationController?.navigationBar.prefersLargeTitles = true
-        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: plusButton)
-        plusButton.addTarget(self, action: #selector(tapPlusAction), for: .touchUpInside)
+        navigationItem.rightBarButtonItem = UIBarButtonItem(customView: addTaskButton)
+        addTaskButton.addTarget(self, action: #selector(didTapAddAction), for: .touchUpInside)
+        
+        if !UserDefaults().bool(forKey: "setup") {
+            UserDefaults().set(true, forKey: "setup")
+            UserDefaults().set(0, forKey: "count")
+        }
+        
+        setupConstraints()
+        updateTasks()
     }
     
     private func setupConstraints() {
@@ -49,8 +61,62 @@ class ToDoViewController: UIViewController {
     }
     
     @objc
-    func tapPlusAction() {
-        
+    func didTapAddAction() {
+        let viewController = CreateTaskViewController()
+        viewController.title = "New task"
+        navigationController?.pushViewController(viewController, animated: true)
+        viewController.update = {
+            DispatchQueue.main.async {
+                self.updateTasks()
+            }
+        }
+    }
+    
+    private func updateTasks() {
+        tasksArray.removeAll()
+        guard let count = UserDefaults().value(forKey: "count") as? Int else { return }
+        for x in 0..<count {
+            if let task = UserDefaults().value(forKey: "task_\(x+1)") as? String {
+                let myTask = ToDoViewModel(toDoTaskText: task)
+                tasksArray.append(myTask)
+            }
+        }
+        toDoTableView.reloadData()
+    }
+}
+
+extension ToDoViewController: UITableViewDataSource {
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return tasksArray.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: ToDoTableViewCell.identifier, for: indexPath) as? ToDoTableViewCell else {
+            return UITableViewCell()
+        }
+        cell.textLabel?.text = tasksArray[indexPath.row].toDoTaskText
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if (editingStyle == .delete) {
+            let deleteTask = tasksArray[indexPath.row]
+            tasksArray.remove(at: indexPath.row)
+            UserDefaults().removeObject(forKey: "task_\(deleteTask)")
+            toDoTableView.reloadData()
+        }
+    }
+}
+
+extension ToDoViewController: UITableViewDelegate {
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        toDoTableView.deselectRow(at: indexPath, animated: true)
     }
 }
 
