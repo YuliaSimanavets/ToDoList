@@ -107,8 +107,18 @@ extension ToDoViewController: UITableViewDataSource {
         if (editingStyle == .delete) {
             let deleteTask = tasksArray[indexPath.row]
             tasksArray.remove(at: indexPath.row)
-            UserDefaults().removeObject(forKey: "task_\(deleteTask)")
-            toDoTableView.reloadData()
+            toDoTableView.deleteRows(at: [indexPath], with: .fade)
+
+            if let count = UserDefaults().value(forKey: "count") as? Int {
+                for i in 0..<count {
+                    if let task = UserDefaults().value(forKey: "task_\(i+1)") as? String, task == deleteTask.toDoTaskText {
+                        UserDefaults().removeObject(forKey: "task_\(i+1)")
+                        UserDefaults().synchronize()
+                        break
+                    }
+                }
+                UserDefaults().set(count - 1, forKey: "count")
+            }
         }
     }
 }
