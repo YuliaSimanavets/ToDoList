@@ -18,7 +18,7 @@ class ToDoViewController: UIViewController {
     }()
     
     private let toDoTableView: UITableView = {
-        let tableView = UITableView()
+        let tableView = UITableView(frame: .zero, style: .insetGrouped)
         tableView.backgroundColor = .clear
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
@@ -54,8 +54,8 @@ class ToDoViewController: UIViewController {
     private func setupConstraints() {
         NSLayoutConstraint.activate([
             toDoTableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            toDoTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
-            toDoTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -10),
+            toDoTableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            toDoTableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             toDoTableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
@@ -77,7 +77,7 @@ class ToDoViewController: UIViewController {
         guard let count = UserDefaults().value(forKey: "count") as? Int else { return }
         for x in 0..<count {
             if let task = UserDefaults().value(forKey: "task_\(x+1)") as? String {
-                let myTask = ToDoViewModel(toDoTaskText: task)
+                let myTask = ToDoViewModel(toDoTaskText: task, checked: false)
                 tasksArray.append(myTask)
             }
         }
@@ -86,6 +86,10 @@ class ToDoViewController: UIViewController {
 }
 
 extension ToDoViewController: UITableViewDataSource {
+    
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return 1
+    }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return tasksArray.count
